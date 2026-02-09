@@ -75,73 +75,72 @@ async def post_init(application: Application):
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     downloads, is_prem = get_user_data(user.id)
-    status = "👑 SULTAN MEMBER" if is_prem else f"🆓 FREE USER ({downloads}/5)"
-    msg = (f"🔥 **Greetings, {user.first_name}!**\n\n"
+    status = "SULTAN MEMBER" if is_prem else f"FREE USER ({downloads}/5)"
+    msg = (f"🔥 Greetings, {user.first_name}!\n\n"
            f"Selamat datang di Downloader Ultimate. Layanan profesional untuk bypass konten media sosial.\n\n"
-           f"● **Account Status:** {status}\n"
-           f"● **Engine Status:** 🟢 Optimized\n\n"
+           f"● Account Status: {status}\n"
+           f"● Engine Status: Optimized\n\n"
            f"Kirim link video (TikTok, IG, FB, YT) untuk memulai.")
-    await update.message.reply_text(msg, parse_mode="Markdown")
+    await update.message.reply_text(msg)
 
 async def tutorial(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    msg = ("📖 **TUTORIAL SAVE TO GALLERY**\n\n"
+    msg = ("📖 TUTORIAL SAVE TO GALLERY\n\n"
            "Agar video tersimpan permanen di galeri HP kamu, ikuti langkah ini:\n\n"
            "1. Buka video yang sudah dikirim oleh bot.\n"
-           "2. Klik **Titik Tiga (⋮)** di pojok kanan atas video.\n"
-           "3. Pilih menu **'Save to Gallery'** atau **'Simpan ke Galeri'**.\n"
+           "2. Klik Titik Tiga (⋮) di pojok kanan atas video.\n"
+           "3. Pilih menu 'Save to Gallery' atau 'Simpan ke Galeri'.\n"
            "4. Cek folder 'Telegram Videos' di aplikasi Foto/Galeri kamu.\n\n"
            "Selesai! Video siap kamu tonton secara offline.")
-    await update.message.reply_text(msg, parse_mode="Markdown")
+    await update.message.reply_text(msg)
 
 async def buy_premium(update: Update, context: ContextTypes.DEFAULT_TYPE):
     u_id = update.effective_user.id
-    msg = (f"💎 **UPGRADE TO SULTAN PACKAGE** 💎\n\n"
+    msg = (f"💎 UPGRADE TO SULTAN PACKAGE 💎\n\n"
            f"Nikmati akses unlimited tanpa batas kuota selama 7 hari.\n\n"
-           f"💰 **Harga:** Rp10.000\n"
-           f"🔗 **Link Pembayaran:** [Klik di Sini]({TRAKTEER_LINK})\n\n"
-           f"⚠️ **PENTING:** Masukkan ID kamu di kolom pesan dukungan:\n"
-           f"ID: `{u_id}`\n\n"
+           f"💰 Harga: Rp10.000\n"
+           f"🔗 Link Pembayaran: {TRAKTEER_LINK}\n\n"
+           f"⚠️ PENTING: Masukkan ID kamu di kolom pesan dukungan:\n"
+           f"ID: {u_id}\n\n"
            f"Status Sultan akan aktif secara otomatis setelah pembayaran terdeteksi.")
-    await update.message.reply_text(msg, parse_mode="Markdown")
+    await update.message.reply_text(msg)
 
 async def speed_test(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    msg = await update.message.reply_text("🌐 **Speedtest.net by Google Cloud**\n\n"
+    msg = await update.message.reply_text("🌐 Speedtest.net by Google Cloud\n\n"
                                           "Menganalisis latensi...")
     await asyncio.sleep(1)
     
     stages = [
         "🔍 Menghubungkan ke Server Frankfurt 🇩🇪...",
-        "📉 Menghitung Latensi: `12ms`",
+        "📉 Menghitung Latensi: 12ms",
         "📤 Mengukur Kecepatan Upload...",
         "📥 Mengukur Kecepatan Download..."
     ]
     
     for stage in stages:
-        await msg.edit_text(f"🌐 **Speedtest.net by Google Cloud**\n\n{stage}")
+        await msg.edit_text(f"🌐 Speedtest.net by Google Cloud\n\n{stage}")
         await asyncio.sleep(0.8)
 
-    await msg.edit_text("🌐 **Speedtest.net by Google Cloud**\n\n"
-                        "✅ **Test Berhasil!**\n"
-                        "● Upload: `20.45 Mbps`\n"
-                        "● Download: `50.12 Mbps`\n"
-                        "● Status: **Sangat Kelazzz!**")
+    await msg.edit_text("🌐 Speedtest.net by Google Cloud\n\n"
+                        "✅ Test Berhasil!\n"
+                        "● Upload: 20.45 Mbps\n"
+                        "● Download: 50.12 Mbps\n"
+                        "● Status: Sangat Kelazzz!")
 
 async def download(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     downloads, is_prem = get_user_data(user_id)
 
     if not is_prem and downloads >= 5:
-        await update.message.reply_text("❌ **Access Denied!** Jatah gratis kamu telah habis.\n"
+        await update.message.reply_text("❌ Access Denied! Jatah gratis kamu telah habis.\n"
                                         "Upgrade ke Sultan Package via /bayar.")
         return
 
     url = update.message.text
     if not url.startswith("http"): return
 
-    status = await update.message.reply_text("🔍 **Processing Link...**\nEngine sedang melakukan bypass proteksi.")
+    status = await update.message.reply_text("🔍 Processing Link...\nEngine sedang melakukan bypass proteksi.")
     filename = f"vid_{user_id}_{int(time.time())}.mp4"
     
-    # PENAJAMAN ENGINE MENTOK
     ydl_opts = {
         'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
         'outtmpl': filename,
@@ -153,36 +152,36 @@ async def download(update: Update, context: ContextTypes.DEFAULT_TYPE):
     }
     
     try:
-        await status.edit_text("⚔️ **Bypass Success!**\nSedang mengekstrak file video kualitas terbaik...")
+        await status.edit_text("⚔️ Bypass Success!\nSedang mengekstrak file video kualitas terbaik...")
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             await asyncio.get_event_loop().run_in_executor(None, lambda: ydl.download([url]))
         
         if os.path.exists(filename):
-            await status.edit_text("📦 **Sending Data...**\nVideo siap dikirim.")
+            await status.edit_text("📦 Sending Data...\nVideo siap dikirim.")
             
             if not is_prem:
                 update_download_count(user_id)
                 new_c = downloads + 1
                 sisa = 5 - new_c
-                caption = (f"✅ **Video Berhasil Dantai!**\n\n"
-                           f"📊 **Usage Info:**\n"
+                caption = (f"✅ Video Berhasil Dantai!\n\n"
+                           f"📊 Usage Info:\n"
                            f"● Batas Pemakaian Gratis: {new_c}/5\n"
                            f"● Sisa Pemakaian Gratis: {sisa}\n\n"
                            f"Untuk pemakaian bebas selama 7 hari, kami tersedia Sultan Package. "
                            f"Silahkan pilih menu /bayar di menu. Have a nice day!\n\n"
                            f"💡 Untuk proses penyimpanan ke galeri, cek tutorial di /tutorial")
             else:
-                caption = "👑 **SULTAN MEMBER:** Unlimited Download Aktif.\n💡 Tutorial simpan: /tutorial"
+                caption = "👑 SULTAN MEMBER: Unlimited Download Aktif.\n💡 Tutorial simpan: /tutorial"
 
             with open(filename, 'rb') as video:
-                await update.message.reply_video(video=video, caption=caption, parse_mode="Markdown")
+                await update.message.reply_video(video=video, caption=caption)
             
             os.remove(filename)
             await status.delete()
         else:
-            await status.edit_text("❌ **Engine Error!** File gagal diekstrak. Coba link lain.")
+            await status.edit_text("❌ Engine Error! File gagal diekstrak. Coba link lain.")
     except Exception as e:
-        await status.edit_text(f"❌ **System Error!** Proteksi situs terlalu ketat.")
+        await status.edit_text(f"❌ System Error! Proteksi situs terlalu ketat.")
         if os.path.exists(filename): os.remove(filename)
 
 if __name__ == '__main__':
