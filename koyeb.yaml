@@ -1,0 +1,4 @@
+name: bot-kelazzz
+type: worker
+docker:
+  dockerfile: Dockerfile
