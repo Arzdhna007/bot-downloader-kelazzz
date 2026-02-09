@@ -11,3 +11,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 CMD ["python", "bot.py"]
+
+# Menambahkan port palsu agar Koyeb senang
+EXPOSE 8000
+CMD python bot.py
