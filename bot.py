@@ -7,7 +7,7 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
 TOKEN = "8152329472:AAFMTHRlNjOO4mEgAK9VarzTG0W4wtKDNTU"
 ADMIN_ID = 6363297127  # ID Telegram lo
 DB_NAME = "bot_data.db"
-TRAKTEER_LINK = "https://trakteer.id/arrizqipram" # Username Trakteer lo
+TRAKTEER_LINK = "https://trakteer.id/arzdhna" # Link fix lo, Bro!
 
 # ================= DATABASE SYSTEM =================
 def init_db():
@@ -53,7 +53,7 @@ server = Flask(__name__)
 def trakteer_webhook():
     data = request.json
     try:
-        # Trakteer mengirim pesan di field 'supporter_message'
+        # Trakteer mengirim ID user di field 'supporter_message'
         msg = data.get('supporter_message', '')
         # Ambil angka ID saja dari pesan dukungan
         user_id = int(''.join(filter(str.isdigit, msg)))
@@ -118,7 +118,7 @@ async def activate_sultan(update: Update, context: ContextTypes.DEFAULT_TYPE):
         target_id = int(context.args[0])
         activate_premium_db(target_id)
         await update.message.reply_text(f"✅ User {target_id} resmi jadi SULTAN!")
-        await context.bot.send_message(target_id, "🔥 Akun kamu sudah PREMIUM. Unlimited Download!")
+        await context.bot.send_message(target_id, "🔥 Akun kamu sudah PREMIUM. Enjoy Unlimited Download!")
     except:
         await update.message.reply_text("Format: /sultan [id]")
 
@@ -147,8 +147,9 @@ async def download(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         if os.path.exists(filename):
             await status.edit_text("📦 Sending...")
+            caption = "✅ Berhasil Dantai!" if lang == 'id' else "✅ Successfully Bypassed!"
             with open(filename, 'rb') as video:
-                await update.message.reply_video(video=video, caption="✅ Berhasil Dantai!")
+                await update.message.reply_video(video=video, caption=caption)
             os.remove(filename)
             if not is_prem: update_download_count(user_id)
             await status.delete()
