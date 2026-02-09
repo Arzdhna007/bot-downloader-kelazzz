@@ -66,7 +66,7 @@ def run_server():
 async def post_init(application: Application):
     commands = [
         BotCommand("start", "Mulai Layanan"),
-        BotCommand("bayar", "Sultan Package"),
+        BotCommand("bayar", "Aktivasi Sultan"),
         BotCommand("tutorial", "Cara Simpan Galeri"),
         BotCommand("ping", "Speedtest Server"),
     ]
@@ -75,12 +75,17 @@ async def post_init(application: Application):
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     downloads, is_prem = get_user_data(user.id)
-    status = "SULTAN MEMBER" if is_prem else f"FREE USER ({downloads}/5)"
+    status = "👑 SULTAN MEMBER" if is_prem else f"🆓 FREE USER ({downloads}/5)"
+    
     msg = (f"🔥 Greetings, {user.first_name}!\n\n"
-           f"Selamat datang di Downloader Ultimate. Layanan profesional untuk bypass konten media sosial.\n\n"
+           f"Selamat datang di Ultimate Downloader Engine.\n"
+           f"Layanan No Watermark terbaik untuk:\n"
+           f"● TikTok Downloader\n"
+           f"● Instagram Saver\n"
+           f"● FB & YouTube Downloader\n\n"
            f"● Account Status: {status}\n"
            f"● Engine Status: Optimized\n\n"
-           f"Kirim link video (TikTok, IG, FB, YT) untuk memulai.")
+           f"Kirim link video untuk memulai proses bypass.")
     await update.message.reply_text(msg)
 
 async def tutorial(update: Update, context: ContextTypes.DEFAULT_TYPE):
