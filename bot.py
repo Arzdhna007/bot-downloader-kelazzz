@@ -2,10 +2,27 @@ import os
 import yt_dlp
 import asyncio
 import time
+import http.server
+import socketserver
+import threading
 from telegram import Update, BotCommand
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 
-# TOKEN BOT ANDA
+# ================= PERSENJATAAN KOYEB =================
+# Server palsu untuk menipu Health Check Koyeb di Port 80
+def run_health_check_server():
+    PORT = 80
+    handler = http.server.SimpleHTTPRequestHandler
+    # Mengizinkan penggunaan ulang alamat port agar tidak error saat redeploy
+    socketserver.TCPServer.allow_reuse_address = True
+    with socketserver.TCPServer(("", PORT), handler) as httpd:
+        print(f">>> Health Check Server Aktif di Port {PORT} <<<")
+        httpd.serve_forever()
+
+# Jalankan server di background agar bot tidak terhenti
+threading.Thread(target=run_health_check_server, daemon=True).start()
+# ======================================================
+
 TOKEN = "8152329472:AAFMTHRlNjOO4mEgAK9VarzTG0W4wtKDNTU"
 
 async def post_init(application: Application):
@@ -14,6 +31,7 @@ async def post_init(application: Application):
         BotCommand("info", "Panduan Penggunaan"),
         BotCommand("tentang", "Kisah di Balik Bot"),
         BotCommand("ping", "Cek Kecepatan Bot"),
+        BotCommand("help", "Bantuan Cepat"),
     ]
     await application.bot.set_my_commands(commands)
 
@@ -26,26 +44,32 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "Coba cek menu /tentang kalau mau tahu asal-usul saya!"
     )
 
+async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(
+        "🆘 **BUTUH BANTUAN?**\n\n"
+        "Cukup kirimkan link video secara langsung. Jika error:\n"
+        "1. Pastikan video bersifat **Publik**.\n"
+        "2. Jangan gunakan link 'Private Group'.\n"
+        "3. Gunakan link asli (bukan hasil perpendek pihak ketiga)."
+    )
+
 async def info(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "📖 **PANDUAN SINGKAT:**\n\n"
         "1. **Cari Link:** Ambil link dari sosmed favoritmu.\n"
         "2. **Tempel di Sini:** Langsung kirim saja chat berisi link itu.\n"
         "3. **Sabar Dikit:** Saya butuh waktu buat nembus proteksi mereka.\n"
-        "4. **Terima File:** Video bakal muncul langsung di chat ini.\n\n"
-        "Gampang banget kan?"
+        "4. **Terima File:** Video bakal muncul langsung di chat ini."
     )
 
 async def tentang(update: Update, context: ContextTypes.DEFAULT_TYPE):
     kisah = (
         "🛠 **KISAH SI BOT KELAZZZ**\n\n"
-        "Dulu, saya hanyalah barisan kode kosong yang berdebu. Tapi berkat tangan dingin "
-        "seorang 'Prompt Specialist' dan semangat kamu di Termux, saya akhirnya lahir!\n\n"
-        "Saya tidak punya server mahal di Amerika. Saya hidup dan bernapas langsung dari "
-        "HP kamu lewat aplikasi Termux. Setiap kali kamu kirim link, saya bekerja keras "
-        "di latar belakang, menembus firewall raksasa seperti Facebook dan Google, cuma buat "
-        "ngasih video favorit ke kamu tanpa ribet iklan.\n\n"
-        "**Status:** Setia melayani di latar belakang HP kamu."
+        "Dulu saya hanya barisan kode di Termux. Tapi sekarang, berkat teknologi 'Worker' dan Docker, "
+        "saya sudah mengudara di Cloud Server Frankfurt! 🇩🇪\n\n"
+        "Meskipun saya tinggal di server jauh, hati saya tetap untuk melayani download video kamu "
+        "tanpa iklan dan tanpa ribet.\n\n"
+        "**Status:** Mengudara 24/7 di Cloud Server."
     )
     await update.message.reply_text(kisah)
 
@@ -62,7 +86,7 @@ async def download(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     status = await update.message.reply_text("🔍 **Mendeteksi link...**")
-    filename = f"video_{update.message.chat_id}.mp4"
+    filename = f"video_{update.message.chat_id}_{int(time.time())}.mp4"
     
     ydl_opts = {
         'format': 'best',
@@ -89,11 +113,12 @@ async def download(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await status.edit_text("❌ Waduh, videonya kabur! Gagal menemukan file.")
 
     except Exception as e:
-        error_msg = str(e)
-        if "403" in error_msg:
-            await status.edit_text("❌ **Akses Ditolak!** Kayaknya video ini privat atau lokasinya dikunci sama pemiliknya.")
+        print(f"Error: {e}")
+        error_msg = str(e).lower()
+        if "403" in error_msg or "private" in error_msg:
+            await status.edit_text("❌ **Akses Ditolak!** Kayaknya video ini privat atau lokasinya dikunci.")
         else:
-            await status.edit_text(f"❌ **Gagal Tembus!** Sepertinya situsnya lagi memperketat keamanan.")
+            await status.edit_text(f"❌ **Gagal Tembus!** Sepertinya proteksi situsnya lagi sangat ketat.")
         
         if os.path.exists(filename):
             os.remove(filename)
@@ -104,7 +129,8 @@ if __name__ == '__main__':
     app.add_handler(CommandHandler("info", info))
     app.add_handler(CommandHandler("tentang", tentang))
     app.add_handler(CommandHandler("ping", ping))
+    app.add_handler(CommandHandler("help", help_command))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, download))
     
-    print(">>> BOT KELAZZZ MODE BERCERITA STANDBY <<<")
+    print(">>> BOT ULTIMATE KELAZZZ STANDBY DI CLOUD <<<")
     app.run_polling()
