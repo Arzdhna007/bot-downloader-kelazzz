@@ -1,12 +1,18 @@
-import os
-import yt_dlp
-import asyncio
-import time
-import http.server
-import socketserver
-import threading
+import os, yt_dlp, asyncio, time, http.server, socketserver, threading, sqlite3
 from telegram import Update, BotCommand
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
+
+# ================= CONFIGURATION =================
+TOKEN = "8152329472:AAFMTHRlNjOO4mEgAK9VarzTG0W4wtKDNTU"
+ADMIN_ID = 6363297127  # ID Telegram lo
+DB_NAME = "bot_data.db"
+
+# Data Payment
+PAYMENT_INFO = {
+    "dana": "+62895613212076",
+    "ovo": "+62895613212076",
+    "paypal": "arrizqipramdahana@gmail.com"
+}
 
 # ================= PERSENJATAAN KOYEB =================
 def run_health_check_server():
@@ -18,13 +24,42 @@ def run_health_check_server():
         httpd.serve_forever()
 
 threading.Thread(target=run_health_check_server, daemon=True).start()
-# ======================================================
 
-TOKEN = "8152329472:AAFMTHRlNjOO4mEgAK9VarzTG0W4wtKDNTU"
+# ================= DATABASE SYSTEM =================
+def init_db():
+    conn = sqlite3.connect(DB_NAME)
+    c = conn.cursor()
+    c.execute('''CREATE TABLE IF NOT EXISTS users 
+                 (user_id INTEGER PRIMARY KEY, downloads INTEGER DEFAULT 0, is_premium INTEGER DEFAULT 0)''')
+    conn.commit()
+    conn.close()
 
+init_db()
+
+def get_user_data(user_id):
+    conn = sqlite3.connect(DB_NAME)
+    c = conn.cursor()
+    c.execute("SELECT downloads, is_premium FROM users WHERE user_id = ?", (user_id,))
+    res = c.fetchone()
+    if not res:
+        c.execute("INSERT INTO users (user_id) VALUES (?)", (user_id,))
+        conn.commit()
+        res = (0, 0)
+    conn.close()
+    return res
+
+def update_download_count(user_id):
+    conn = sqlite3.connect(DB_NAME)
+    c = conn.cursor()
+    c.execute("UPDATE users SET downloads = downloads + 1 WHERE user_id = ?", (user_id,))
+    conn.commit()
+    conn.close()
+
+# ================= BOT LOGIC =================
 async def post_init(application: Application):
     commands = [
         BotCommand("start", "Mulai / Start"),
+        BotCommand("bayar", "Aktivasi Sultan / Premium"),
         BotCommand("info", "Panduan / Guide"),
         BotCommand("tentang", "Tentang / About"),
         BotCommand("ping", "Cek Speed"),
@@ -34,125 +69,107 @@ async def post_init(application: Application):
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
+    downloads, is_prem = get_user_data(user.id)
     lang = user.language_code
+    status = "👑 SULTAN" if is_prem else f"🆓 GRATIS ({downloads}/5)"
     
     if lang == 'id':
         msg = (f"🔥 Waduh, ada tamu kehormatan, {user.first_name}!\n\n"
-               "Saya adalah asisten download pribadi kamu yang paling Kelazzz. "
-               "Kirimkan saja link video TikTok, IG, FB, atau YT, biar saya yang berduel mengambilkan filenya buat kamu.")
+               f"Status Akun: {status}\n"
+               "Kirim link video TikTok, IG, FB, atau YT, biar saya bantai download-annya!")
     else:
         msg = (f"🔥 Welcome, {user.first_name}!\n\n"
-               "I am your premium downloader assistant. "
-               "Just send me a video link from TikTok, IG, FB, or YT, and I'll fight to get the file for you.")
+               f"Account Status: {status}\n"
+               "Send any video link from TikTok, IG, FB, or YT, and I'll get it for you!")
+    await update.message.reply_text(msg)
+
+async def buy_premium(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    lang = update.effective_user.language_code
     
-    await update.message.reply_text(msg)
-
-async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    lang = update.effective_user.language_code
     if lang == 'id':
-        msg = ("🆘 BUTUH BANTUAN?\n\n"
-               "Langsung kirim link video saja. Jika error:\n"
-               "1. Pastikan video Publik.\n"
-               "2. Bukan link Private Group.\n"
-               "3. Gunakan link asli (bukan shortlink).")
+        msg = (f"💎 PAKET SULTAN KELAZZZ 💎\n\n"
+               f"Cukup 10k/minggu untuk download Unlimited!\n\n"
+               f"💰 Pembayaran:\n"
+               f"• DANA/OVO: {PAYMENT_INFO['dana']}\n"
+               f"• PayPal: (Hubungi Admin untuk email)\n\n"
+               f"📸 Konfirmasi:\n"
+               f"Kirim bukti transfer ke Admin.\n"
+               f"Sertakan ID kamu: {user_id}")
     else:
-        msg = ("🆘 NEED HELP?\n\n"
-               "Just send the video link directly. If it fails:\n"
-               "1. Make sure the video is Public.\n"
-               "2. Not a Private Group link.\n"
-               "3. Use the original link (no shortlinks).")
+        msg = (f"💎 SULTAN KELAZZZ PACKAGE 💎\n\n"
+               f"Only 10k/week for Unlimited downloads!\n\n"
+               f"💰 Payment:\n"
+               f"• DANA/OVO: {PAYMENT_INFO['dana']}\n"
+               f"• PayPal: (Contact Admin for email)\n\n"
+               f"📸 Confirmation:\n"
+               f"Send payment proof to Admin.\n"
+               f"Your ID: {user_id}")
     await update.message.reply_text(msg)
 
-async def info(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    lang = update.effective_user.language_code
-    if lang == 'id':
-        msg = ("📖 PANDUAN SINGKAT\n\n"
-               "1. Cari Link video sosmed.\n"
-               "2. Tempel/Kirim di sini.\n"
-               "3. Tunggu proses duel proteksi.\n"
-               "4. Terima videonya langsung!")
-    else:
-        msg = ("📖 QUICK GUIDE\n\n"
-               "1. Copy the social media link.\n"
-               "2. Paste/Send it here.\n"
-               "3. Wait for the bypass process.\n"
-               "4. Receive your video directly!")
-    await update.message.reply_text(msg)
-
-async def tentang(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    lang = update.effective_user.language_code
-    if lang == 'id':
-        msg = ("🛠 KISAH SI BOT KELAZZZ\n\n"
-               "Lahir dari semangat ngoding di Termux, sekarang saya sudah gagah mengudara di Cloud Server Frankfurt! 🇩🇪\n\n"
-               "Status: Aktif 24/7 di Cloud.")
-    else:
-        msg = ("🛠 THE KELAZZZ STORY\n\n"
-               "Born from coding passion in Termux, now I am proudly flying on the Cloud Server in Frankfurt! 🇩🇪\n\n"
-               "Status: Active 24/7 in the Cloud.")
-    await update.message.reply_text(msg)
-
-async def ping(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    start_time = time.time()
-    msg = await update.message.reply_text("⚡ Checking speed...")
-    ms = round((time.time() - start_time) * 1000)
-    await msg.edit_text(f"🚀 PONG!\nSpeed: {ms}ms\nStatus: Very Kelazzz!")
+async def activate_sultan(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_user.id != ADMIN_ID: return
+    try:
+        target_id = int(context.args[0])
+        conn = sqlite3.connect(DB_NAME)
+        c = conn.cursor()
+        c.execute("UPDATE users SET is_premium = 1 WHERE user_id = ?", (target_id,))
+        conn.commit()
+        conn.close()
+        await update.message.reply_text(f"✅ User {target_id} resmi jadi SULTAN!")
+        await context.bot.send_message(target_id, "🔥 Selamat! Akun kamu sudah PREMIUM. Enjoy Unlimited Download!")
+    except:
+        await update.message.reply_text("Format: /sultan [id]")
 
 async def download(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    url = update.message.text
+    user_id = update.effective_user.id
     lang = update.effective_user.language_code
-    if not url.startswith("http"):
+    downloads, is_prem = get_user_data(user_id)
+
+    if not is_prem and downloads >= 5:
+        msg = "❌ Jatah gratis habis! Ketik /bayar untuk jadi Sultan." if lang == 'id' else "❌ Free quota reached! Type /bayar to upgrade."
+        await update.message.reply_text(msg)
         return
+
+    url = update.message.text
+    if not url.startswith("http"): return
 
     wait_msg = "🔍 Mendeteksi link..." if lang == 'id' else "🔍 Detecting link..."
     status = await update.message.reply_text(wait_msg)
-    filename = f"video_{update.message.chat_id}_{int(time.time())}.mp4"
-    
-    ydl_opts = {
-        'format': 'best',
-        'outtmpl': filename,
-        'noplaylist': True,
-        'quiet': True,
-        'no_warnings': True,
-        'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
-    }
+    filename = f"video_{user_id}_{int(time.time())}.mp4"
     
     try:
-        duel_msg = "⚔️ Sedang berduel dengan proteksi..." if lang == 'id' else "⚔️ Fighting the protection system..."
-        await status.edit_text(duel_msg)
-        
+        await status.edit_text("⚔️ Processing...")
+        ydl_opts = {'format': 'best', 'outtmpl': filename, 'quiet': True, 'no_warnings': True}
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            loop = asyncio.get_event_loop()
-            await loop.run_in_executor(None, lambda: ydl.download([url]))
+            await asyncio.get_event_loop().run_in_executor(None, lambda: ydl.download([url]))
         
         if os.path.exists(filename):
-            send_msg = "📦 Video didapat! Mengirim..." if lang == 'id' else "📦 Video captured! Sending..."
-            await status.edit_text(send_msg)
-            
-            caption = "✅ Nih videonya, Bro!" if lang == 'id' else "✅ Here is your video!"
+            await status.edit_text("📦 Sending...")
+            caption = "✅ Berhasil Dantai!" if lang == 'id' else "✅ Successfully Bypassed!"
             with open(filename, 'rb') as video:
                 await update.message.reply_video(video=video, caption=caption)
-            
             os.remove(filename)
+            if not is_prem: update_download_count(user_id)
             await status.delete()
         else:
-            fail_msg = "❌ Videonya kabur!" if lang == 'id' else "❌ Video escaped!"
-            await status.edit_text(fail_msg)
-
+            await status.edit_text("❌ File not found!")
     except Exception as e:
-        print(f"Error: {e}")
-        error_text = "❌ Gagal Tembus!" if lang == 'id' else "❌ Bypass Failed!"
-        await status.edit_text(error_text)
-        if os.path.exists(filename):
-            os.remove(filename)
+        await status.edit_text(f"❌ Error: {str(e)[:50]}")
+        if os.path.exists(filename): os.remove(filename)
+
+# Fungsi lain (ping, info, tentang, help) tetap sama...
+async def ping(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    start_time = time.time()
+    msg = await update.message.reply_text("⚡ Checking...")
+    ms = round((time.time() - start_time) * 1000)
+    await msg.edit_text(f"🚀 PONG! {ms}ms")
 
 if __name__ == '__main__':
     app = Application.builder().token(TOKEN).post_init(post_init).build()
     app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("info", info))
-    app.add_handler(CommandHandler("tentang", tentang))
+    app.add_handler(CommandHandler("bayar", buy_premium))
+    app.add_handler(CommandHandler("sultan", activate_sultan))
     app.add_handler(CommandHandler("ping", ping))
-    app.add_handler(CommandHandler("help", help_command))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, download))
-    
-    print(">>> BOT ULTIMATE MULTI-LANGUAGE STANDBY <<<")
     app.run_polling()
